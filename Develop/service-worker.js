@@ -1,10 +1,12 @@
 const FILES_TO_CACHE = [
-  "Develop/public/icons/icon-192x192.png", 
-  "/icons/icon-512x512.png",
-  "/styles.css",
-  "/db.js",
+  "/", 
+  "/index.html", 
   "/index.js",
-  "/manifest.webmanifest"
+  "/favicon.ico", 
+  "/styles.css", 
+  "/icons/icon-128x128.png", 
+  "/icons/icon-256x256.png",
+  "/icons/icon-512x512.png"
 ];
 
 const STATIC_CACHE = "static-cache-v1";
@@ -49,6 +51,22 @@ self.addEventListener("fetch", event => {
     !event.request.url.startsWith(self.location.origin)
   ) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+   // handle runtime GET requests for data from /api routes
+   if (event.request.url.includes("/api/images")) {
+    // make network request and fallback to cache if network request fails (offline)
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then(cache => {
+        return fetch(event.request)
+          .then(response => {
+            cache.put(event.request, response.clone());
+            return response;
+          })
+          .catch(() => caches.match(event.request));
+      })
+    );
     return;
   }
 
